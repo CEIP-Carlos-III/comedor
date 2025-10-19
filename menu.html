@@ -167,7 +167,9 @@
             rows.forEach(row => {
                 const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
-                const [dateStr, weekLabel, dayName, specialNotes = '', meals, dessert, nutrition, icon] = safeColumns;
+                
+                // Nueva estructura de columnas
+                const [dateStr, weekLabel, dayName, specialNotes = '', plato1, plato2, pan, dessert, nutrition, icon] = safeColumns;
                 
                 if (!dateStr || !weekLabel || !dayName) return;
 
@@ -190,9 +192,11 @@
                 
                 const isHoliday = specialNotes.toLowerCase().includes('no lectivo');
                 const isSpecialEvent = specialNotes && !isHoliday;
+                
+                const mealsArray = [plato1, plato2, pan].filter(item => item && item.trim() !== '');
 
                 data[yearNum][monthNum].weeks[weekLabel].days[dayName] = {
-                    meals: specialNotes ? [specialNotes] : (meals ? meals.split(';').map(m => m.trim()) : []),
+                    meals: specialNotes ? [specialNotes] : mealsArray,
                     dessert: dessert || "",
                     nutrition: nutrition || "",
                     icon: icon || "🍽️",
@@ -433,3 +437,4 @@
     </script>
 </body>
 </html>
+
