@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Escolar Interactivo - CEIP Carlos III</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+        }
+        .font-brand {
+            font-family: 'Pacifico', cursive;
+        }
+        /* Animation for cards */
+        .card-enter {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .card-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Modal styles */
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+        /* Hover effects */
+        .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        /* Estilo para el estado de carga */
+        #loading-state {
+            min-height: 300px;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <div class="bg-white rounded-3xl shadow-lg p-6 sm:p-8 flex flex-col md:flex-row items-center justify-center md:justify-between gap-4 sm:gap-6">
+                <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/comedorcarlosiii.png" 
+                     alt="Logo CEIP Carlos III" 
+                     class="hidden md:block h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 xl:h-48 xl:w-48 object-contain md:order-1"
+                     onerror="this.style.display='none'">
+                <div class="text-center order-first md:order-2">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-cyan-700 font-brand">🍽️ Comedor Escolar</h1>
+                    <h2 class="text-lg md:text-xl lg:text-2xl font-semibold text-gray-600 mt-2 md:mt-4">CEIP Carlos III de La Carlota</h2>
+                </div>
+                <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/junta.png" 
+                     alt="Logo Junta de Andalucía" 
+                     class="hidden md:block h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 xl:h-48 xl:w-48 object-contain md:order-3"
+                     onerror="this.style.display='none'">
+                <div class="flex md:hidden justify-center items-center gap-8 mt-4 order-last">
+                    <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/comedorcarlosiii.png" 
+                         alt="Logo CEIP Carlos III" 
+                         class="h-20 w-20 object-contain"
+                         onerror="this.style.display='none'">
+                    <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/junta.png" 
+                         alt="Logo Junta de Andalucía" 
+                         class="h-20 w-20 object-contain"
+                         onerror="this.style.display='none'">
+                </div>
+            </div>
+        </header>
+
+        <!-- Calendar Week Selector -->
+        <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-10">
+            <div class="flex items-center justify-between mb-4 px-2 gap-2">
+                <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0"><i class="fas fa-chevron-left"></i></button>
+                <h2 id="calendar-month" class="text-xl sm:text-2xl font-bold text-cyan-800 text-center flex-grow"></h2>
+                <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0"><i class="fas fa-chevron-right"></i></button>
+                <button id="today-btn" class="ml-2 px-3 py-2 sm:px-4 text-sm sm:text-base bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors shadow-sm flex-shrink-0">Hoy</button>
+            </div>
+            <div id="calendar-container" class="flex flex-col sm:flex-row gap-2 rounded-lg">
+                <!-- Calendar weeks will be inserted here by JS -->
+            </div>
+        </div>
+
+        <!-- Menu Container -->
+        <div id="menu-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <!-- Loading/Error State -->
+            <div id="loading-state" class="col-span-full flex items-center justify-center p-10 bg-gray-50 rounded-lg">
+                <p class="text-lg text-gray-500 font-semibold animate-pulse">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Cargando menú...
+                </p>
+            </div>
+        </div>
+
+        <!-- Important Note Footer -->
+        <footer class="text-center mt-16 p-6 bg-white border-t-4 border-amber-400 rounded-lg shadow-lg">
+            <p class="text-amber-900 font-semibold text-lg"><i class="fas fa-exclamation-triangle mr-2"></i>NOTA IMPORTANTE:</p>
+            <p class="text-gray-700 mt-2 max-w-2xl mx-auto">Para aquellos niños que necesiten menús especiales por alergias o intolerancias, comuníquenlo en dirección para poder realizarle un menú compatible.</p>
+            <div class="mt-4 flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm text-gray-600">
+                <span><i class="fas fa-phone mr-1"></i>Tel: 123-456-789</span>
+                <span><i class="fas fa-envelope mr-1"></i>comedor@escuela.edu</span>
+                <a href="https://blogsaverroes.juntadeandalucia.es/ceipcarlostercero/" target="_blank" class="font-semibold text-cyan-700 hover:text-cyan-600 transition-colors">
+                    <i class="fas fa-globe mr-1"></i>Web del Colegio
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Nutrition Modal -->
+    <div id="nutrition-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center p-4 hidden modal-backdrop z-50 overflow-y-auto">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-lg relative transform scale-95 opacity-0 modal-content my-8">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors z-10">
+                <i class="fas fa-times fa-2x"></i>
+            </button>
+            <h3 class="text-2xl font-bold text-cyan-800 mb-4 pr-8" id="modal-title">📊 Información Nutricional</h3>
+            <div id="modal-body" class="text-gray-600"></div>
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>Valores nutricionales aproximados por ración.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN GLOBAL ---
+        const GOOGLE_SHEET_ID = "1HsrAL5YssfAsxEUCY3YCliMF0UWGg-9nlQRmr82tsMQ";
+        const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+        // --- ESTADO DE LA APLICACIÓN ---
+        let allMenuData = {};
+        let state = {
+            displayDate: new Date(),
+            currentWeekIndex: 0,
+            todayInfo: { year: null, month: null, weekIndex: null, dayName: null }
+        };
+
+        // --- FUNCIONES DE CARGA Y PROCESAMIENTO DE DATOS ---
+
+        async function loadMenuData() {
+            try {
+                const response = await fetch(GOOGLE_SHEET_URL + '&t=' + new Date().getTime());
+                if (!response.ok) throw new Error('No se pudo cargar la hoja de cálculo.');
+                const csvText = await response.text();
+                allMenuData = parseCSVToMenuConfig(csvText);
+                return true;
+            } catch (error) {
+                console.error("Error al cargar el menú:", error);
+                displayError("No se ha podido cargar el menú. Asegúrate de que la hoja de cálculo está 'Publicada en la web'.");
+                return false;
+            }
+        }
+
+        function parseCSVToMenuConfig(csvText) {
+            const rows = csvText.split('\n').slice(1);
+            const data = {};
+
+            rows.forEach(row => {
+                const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
+                const [dateStr, weekLabel, dayName, specialNotes = '', meals, dessert, nutrition, icon] = safeColumns;
+                
+                if (!dateStr || !weekLabel || !dayName) return;
+
+                const [day, month, year] = dateStr.split('/');
+                const yearNum = parseInt(year, 10);
+                const monthNum = parseInt(month, 10) - 1;
+
+                if (!data[yearNum]) data[yearNum] = {};
+                if (!data[yearNum][monthNum]) data[yearNum][monthNum] = { year: yearNum, month: monthNum, weeks: {} };
+
+                if (!data[yearNum][monthNum].weeks[weekLabel]) {
+                    data[yearNum][monthNum].weeks[weekLabel] = {
+                        weekLabel,
+                        month: monthNum,
+                        startDay: parseInt(day, 10),
+                        year: yearNum,
+                        days: {}
+                    };
+                }
+                
+                const isHoliday = specialNotes.toLowerCase().includes('no lectivo');
+                const isSpecialEvent = specialNotes && !isHoliday;
+
+                data[yearNum][monthNum].weeks[weekLabel].days[dayName] = {
+                    meals: specialNotes ? [specialNotes] : (meals ? meals.split(';').map(m => m.trim()) : []),
+                    dessert: dessert || "",
+                    nutrition: nutrition || "",
+                    icon: icon || "🍽️",
+                    isSpecial: isSpecialEvent,
+                    isHoliday: isHoliday
+                };
+            });
+
+            for (const year in data) {
+                for (const month in data[year]) {
+                    data[year][month].weeks = Object.values(data[year][month].weeks);
+                }
+            }
+            return data;
+        }
+        
+        // --- FUNCIONES DE RENDERIZADO Y UI ---
+        
+        function detectCurrentDateInfo() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            
+            if (allMenuData[year] && allMenuData[year][month]) {
+                const monthData = allMenuData[year][month];
+                monthData.weeks.forEach((week, index) => {
+                    const currentDate = today.getDate();
+                    const dayNames = Object.keys(week.days);
+                    const weekEndDate = week.startDay + dayNames.length - 1;
+                    if (currentDate >= week.startDay && currentDate <= weekEndDate) {
+                        state.todayInfo = { year, month, weekIndex: index, dayName: dayNames[currentDate - week.startDay] };
+                    }
+                });
+            }
+        }
+
+        function renderMonth(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const monthData = allMenuData[year] && allMenuData[year][month];
+            
+            document.getElementById('calendar-month').innerHTML = `<i class="far fa-calendar-alt mr-3"></i> ${capitalize(getMonthName(month, year))}`;
+
+            if (!monthData) {
+                document.getElementById('calendar-container').innerHTML = '';
+                displayError("No hay menú disponible para este mes.");
+                return;
+            }
+
+            if (state.todayInfo.year === year && state.todayInfo.month === month) {
+                state.currentWeekIndex = state.todayInfo.weekIndex;
+            } else {
+                state.currentWeekIndex = 0;
+            }
+            
+            renderWeekSelectors(monthData.weeks);
+            renderMenuCards(monthData.weeks[state.currentWeekIndex]);
+        }
+
+        function renderWeekSelectors(weeks) {
+            const calendarContainer = document.getElementById('calendar-container');
+            calendarContainer.innerHTML = '';
+            weeks.forEach((week, index) => {
+                const weekButton = document.createElement('div');
+                const isActive = index === state.currentWeekIndex;
+                const dayNames = Object.keys(week.days);
+                const endDate = week.startDay + dayNames.length - 1;
+                const monthName = getMonthName(week.month, week.year);
+                weekButton.className = `flex-1 p-4 text-center cursor-pointer transition-all duration-300 rounded-lg ${isActive ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg' : 'bg-white border border-gray-200 shadow-sm hover:bg-cyan-50 text-gray-700 hover:shadow-lg'}`;
+                weekButton.innerHTML = `<h3 class="font-bold text-lg mb-1">${week.weekLabel}</h3><p class="text-sm opacity-90">Del ${week.startDay} al ${endDate} de ${monthName}</p>`;
+                weekButton.onclick = () => selectWeek(index);
+                calendarContainer.appendChild(weekButton);
+            });
+        }
+        
+        function selectWeek(weekIndex) {
+            state.currentWeekIndex = weekIndex;
+            const year = state.displayDate.getFullYear();
+            const month = state.displayDate.getMonth();
+            const monthData = allMenuData[year][month];
+            renderWeekSelectors(monthData.weeks);
+            renderMenuCards(monthData.weeks[weekIndex]);
+        }
+
+        function renderMenuCards(weekData) {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+            
+            const dayEntries = Object.entries(weekData.days);
+
+            dayEntries.forEach(([dayName, dayData], index) => {
+                const card = document.createElement('div');
+                const isToday = state.todayInfo.year === weekData.year && state.todayInfo.month === weekData.month && state.todayInfo.weekIndex === allMenuData[weekData.year][weekData.month].weeks.findIndex(w => w.weekLabel === weekData.weekLabel) && state.todayInfo.dayName === dayName;
+                const dateOfMonth = weekData.startDay + index;
+                const monthName = getMonthName(weekData.month, weekData.year);
+
+                let cardClasses = 'menu-card rounded-2xl p-6 transition-all duration-300 card-enter flex flex-col ';
+                if (dayData.isHoliday) {
+                    cardClasses += 'bg-gray-100 border-2 border-dashed border-gray-300 shadow-inner opacity-60';
+                } else if (dayData.isSpecial) {
+                    cardClasses += 'bg-green-50 border-2 border-dashed border-green-300 shadow-inner';
+                } else if (isToday) {
+                    cardClasses += 'bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-orange-300 shadow-xl';
+                } else {
+                    cardClasses += 'bg-white shadow-lg';
+                }
+                card.className = cardClasses;
+
+                setTimeout(() => card.classList.add('card-enter-active'), index * 50);
+
+                let cardHTML = `
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-2">${dayData.icon}</div>
+                        <h3 class="text-xl font-bold ${dayData.isHoliday ? 'text-gray-500' : (dayData.isSpecial ? 'text-green-800' : 'text-cyan-800')}">
+                            ${dayName}
+                            ${isToday ? '<span class="ml-1 text-orange-600 font-semibold text-sm align-baseline">¡HOY!</span>' : ''}
+                        </h3>
+                        <p class="text-sm text-gray-500 font-medium mt-1">
+                            ${dateOfMonth} de ${monthName}
+                        </p>
+                    </div>
+                    <div class="space-y-3 flex-grow">
+                `;
+
+                if (dayData.isHoliday || dayData.isSpecial) {
+                     cardHTML += `<div class="text-center flex-grow flex items-center justify-center"><h4 class="font-semibold text-gray-700 text-lg">${dayData.meals[0]}</h4></div>`;
+                } else {
+                    cardHTML += `
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2 flex items-center"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos:</h4>
+                            <ul class="text-sm text-gray-600 space-y-1 pl-1">
+                                ${dayData.meals.map(meal => `<li class="flex items-start"><span class="text-green-500 mr-2">•</span>${meal}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-1 flex items-center"><i class="fas fa-ice-cream mr-2 text-pink-500"></i>Postre:</h4>
+                            <p class="text-sm text-gray-600 pl-5">${dayData.dessert}</p>
+                        </div>
+                    `;
+                }
+                cardHTML += '</div>';
+
+                if (dayData.nutrition) {
+                    cardHTML += `<button onclick="showNutritionModal('${dayName}')" class="mt-4 w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-2 px-4 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 font-semibold"><i class="fas fa-chart-pie mr-2"></i>Info Nutricional</button>`;
+                }
+                card.innerHTML = cardHTML;
+                container.appendChild(card);
+            });
+        }
+
+        function showNutritionModal(dayName) {
+            const modal = document.getElementById('nutrition-modal');
+            const modalContent = document.getElementById('modal-content');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const dayData = allMenuData[state.displayDate.getFullYear()][state.displayDate.getMonth()].weeks[state.currentWeekIndex].days[dayName];
+            
+            modalTitle.innerHTML = `📊 ${dayName} - Información Nutricional`;
+            const nutritionParts = dayData.nutrition.split(';').map(part => part.trim());
+            
+            modalBody.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-cyan-800 mb-3 flex items-center"><span class="text-2xl mr-2">${dayData.icon}</span>Menú del día</h4>
+                        <div class="space-y-2 text-sm">
+                            ${dayData.meals.map(meal => `<p class="flex items-start"><span class="text-green-500 mr-2">•</span>${meal}</p>`).join('')}
+                            <p class="flex items-start"><span class="text-pink-500 mr-2">🍨</span><strong>Postre:</strong> ${dayData.dessert}</p>
+                        </div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-green-800 mb-3 flex items-center"><i class="fas fa-leaf mr-2"></i>Valores nutricionales</h4>
+                        <div class="grid grid-cols-1 gap-2 text-sm">
+                            ${nutritionParts.map(part => {
+                                const [key, value] = part.split(':');
+                                return `<div class="flex justify-between py-1 border-b border-green-200"><span class="font-medium text-gray-700">${key.trim()}</span><span class="text-green-700 font-semibold">${value ? value.trim() : ''}</span></div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => modalContent.classList.add('scale-100', 'opacity-100'), 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('nutrition-modal');
+            const modalContent = document.getElementById('modal-content');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function displayError(message) {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = `<div id="loading-state" class="col-span-full flex items-center justify-center p-10 bg-red-50 rounded-lg"><p class="text-lg text-red-600 font-semibold"><i class="fas fa-exclamation-triangle mr-2"></i>${message}</p></div>`;
+        }
+
+        // --- FUNCIONES AUXILIARES ---
+        function getMonthName(monthIndex, year) {
+            return new Date(year, monthIndex).toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+        }
+        
+        function capitalize(s) {
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+        
+        // --- INICIALIZACIÓN ---
+        async function main() {
+            const dataLoaded = await loadMenuData();
+            if (!dataLoaded) return;
+
+            detectCurrentDateInfo();
+            renderMonth(state.displayDate);
+
+            document.getElementById('prev-month-btn').onclick = () => {
+                state.displayDate.setMonth(state.displayDate.getMonth() - 1);
+                renderMonth(state.displayDate);
+            };
+            document.getElementById('next-month-btn').onclick = () => {
+                state.displayDate.setMonth(state.displayDate.getMonth() + 1);
+                renderMonth(state.displayDate);
+            };
+            document.getElementById('today-btn').onclick = () => {
+                state.displayDate = new Date();
+                renderMonth(state.displayDate);
+            };
+
+            document.getElementById('close-modal-btn').onclick = closeModal;
+            document.getElementById('nutrition-modal').onclick = (e) => {
+                if (e.target.id === 'nutrition-modal') closeModal();
+            };
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeModal();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', main);
+    </script>
+</body>
+</html>
