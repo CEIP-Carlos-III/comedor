@@ -288,17 +288,26 @@
                 const actualDate = new Date(Date.UTC(year, month - 1, day));
 
                 const specialNotes = safeColumns[3] || '';
-                const mealsCSV = safeColumns[4] || '';
-                const dessert = safeColumns[5] || '';
-                const icon = safeColumns[7] || '🍽️';
+
+                // Leer los platos de las columnas E, F y G
+                const firstCourse = safeColumns[4] || '';
+                const secondCourse = safeColumns[5] || '';
+                const bread = safeColumns[6] || '';
+
+                // Ajustar índices para postre (H) e icono (J)
+                const dessert = safeColumns[7] || '';
+                const icon = safeColumns[9] || '🍽️';
                 
                 const isHoliday = specialNotes.toLowerCase().includes('no lectivo');
                 const isSpecial = specialNotes && !isHoliday;
 
+                // Construir el array de platos, filtrando los que estén vacíos
+                const meals = [firstCourse, secondCourse, bread].filter(m => m && m.trim() !== '');
+
                 allMenus.push({
                     date: actualDate,
                     menu: {
-                        meals: isHoliday || isSpecial ? [specialNotes] : mealsCSV.split(';').map(m => m.trim()),
+                        meals: isHoliday || isSpecial ? [specialNotes] : meals,
                         dessert: dessert,
                         icon: icon,
                         isSpecial: isSpecial,
@@ -387,3 +396,4 @@
 
 </body>
 </html>
+
